@@ -1,0 +1,63 @@
+import { Team } from "./types";
+
+export const MOCK_TEAMS: Team[] = [
+  {
+    id: "t1",
+    name: "Leões do Camama",
+    logoUrl: "/teams/leoes-camama.png",
+    origin: "Camama",
+    associationType: "Bairro",
+    fieldType: "Futebol 11",
+    playersCount: 16,
+    captainName: "Edmilson",
+    captainWhatsapp: "244923000001",
+    description: "Jogamos todos os domingos de manhã. Adversário à altura, apareçam.",
+    size: "lg",
+  },
+  {
+    id: "t2",
+    name: "IMPTEL FC",
+    logoUrl: "/teams/imptel.png",
+    origin: "IMPTEL",
+    associationType: "Escola",
+    fieldType: "Futsal",
+    playersCount: 10,
+    captainName: "Wilson",
+    captainWhatsapp: "244923000002",
+    description: "Equipa da escola, treinos às terças e quintas.",
+    size: "sm",
+  },
+  {
+    id: "t3",
+    name: "Estrelas da Prenda",
+    logoUrl: "/teams/estrelas-prenda.png",
+    origin: "Prenda",
+    associationType: "Bairro",
+    fieldType: "Society",
+    playersCount: 12,
+    captainName: "Cássia",
+    captainWhatsapp: "244923000003",
+    size: "sm",
+  },
+  {
+    id: "t4",
+    name: "Kilamba United",
+    logoUrl: "/teams/kilamba-united.png",
+    origin: "Kilamba",
+    associationType: "Bairro",
+    fieldType: "Futebol 11",
+    playersCount: 18,
+    captainName: "Paulo",
+    captainWhatsapp: "244923000004",
+    size: "sm",
+  },
+];
+
+export const FILTER_PILLS = [
+  "Todos",
+  "Escolas",
+  "Bairros",
+  "Futsal",
+  "Futebol 11",
+  "Society",
+] as const;

@@ -1,0 +1,18 @@
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+env.local
+
+# Dependencies and build output
+node_modules/
+.next/
+out/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Local logs and OS files
+*.log
+.DS_Store
+Thumbs.db
