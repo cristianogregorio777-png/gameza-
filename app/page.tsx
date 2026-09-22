@@ -8,13 +8,15 @@ import AuthPanel from "../components/AuthPanel";
 import ClubOnboarding from "../components/ClubOnboarding";
 import ProfileDashboard from "../components/ProfileDashboard";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
+import { fetchUserContext } from "../lib/user-context";
+import type { UserContext } from "../lib/contracts/user-context";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("explore");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authReturnTab, setAuthReturnTab] = useState<Tab>("create");
   const [showClubOnboarding, setShowClubOnboarding] = useState(false);
-  const [hasClub] = useState(false);
+  const [userContext, setUserContext] = useState<UserContext | null>(null);
 
   useEffect(() => {
     const requestedTab = new URLSearchParams(window.location.search).get("tab");
@@ -24,6 +26,15 @@ export default function Home() {
       void supabase.auth.getSession().then(({ data }) => {
         const sessionExists = Boolean(data.session);
         setIsAuthenticated(sessionExists);
+
+        if (sessionExists) {
+          void fetchUserContext()
+            .then((context) => {
+              setUserContext(context);
+              setShowClubOnboarding(context.account.onboarding !== "complete");
+            })
+            .catch(() => setUserContext(null));
+        }
 
         if (requestedTab === "create" || requestedTab === "profile") {
           setAuthReturnTab(requestedTab);
@@ -35,6 +46,7 @@ export default function Home() {
         const sessionExists = Boolean(session);
         setIsAuthenticated(sessionExists);
         if (!sessionExists) {
+          setUserContext(null);
           setShowClubOnboarding(false);
         }
       });
@@ -60,7 +72,10 @@ export default function Home() {
     setIsAuthenticated(true);
     setShowClubOnboarding(true);
     setTab("profile");
+    void fetchUserContext().then(setUserContext).catch(() => undefined);
   };
+
+  const hasClub = Boolean(userContext?.clubs.length);
 
   return (
     <>
@@ -87,7 +102,7 @@ export default function Home() {
       )}
       {tab === "profile" && isAuthenticated && !showClubOnboarding && (
         <ProfileDashboard
-          email={undefined}
+          email={userContext?.user.email}
           hasClub={hasClub}
           onCreateClub={() => setTab("create")}
           onSignOut={() => {
