@@ -78,6 +78,19 @@ alter table public.locations enable row level security;
 alter table public.teams enable row level security;
 alter table public.moderation_audits enable row level security;
 
+drop policy if exists "Users can read own profile" on public.users;
+create policy "Users can read own profile"
+  on public.users for select
+  to authenticated
+  using (auth.uid() = id);
+
+drop policy if exists "Users can update own profile" on public.users;
+create policy "Users can update own profile"
+  on public.users for update
+  to authenticated
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
+
 drop policy if exists "Public can read locations" on public.locations;
 create policy "Public can read locations"
   on public.locations for select

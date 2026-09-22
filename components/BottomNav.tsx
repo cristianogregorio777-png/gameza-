@@ -21,7 +21,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
       className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       aria-label="Navegação principal"
     >
-      <div className="flex w-full max-w-app items-center justify-between gap-1 rounded-pill border border-line bg-white/[0.05] px-2 py-2 backdrop-blur-glass shadow-soft">
+      <div className="flex w-full max-w-app items-center justify-between gap-1 rounded-card border border-line bg-[#151815]/95 px-2 py-2 backdrop-blur-glass shadow-soft">
         {TABS.map(({ id, label, icon: Icon }) => {
           const isActive = active === id;
           return (
@@ -29,19 +29,19 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
               key={id}
               onClick={() => onChange(id)}
               className={[
-                "relative flex flex-1 flex-col items-center gap-1 rounded-pill py-2 transition-colors",
-                isActive ? "text-base" : "text-ink-mute hover:text-ink",
+                "relative flex flex-1 flex-col items-center gap-1 rounded-xl py-2.5 transition-colors",
+                isActive ? "text-base" : "text-ink-mute hover:bg-white/[0.04] hover:text-ink",
               ].join(" ")}
               aria-current={isActive ? "page" : undefined}
             >
               {isActive && (
                 <span
-                  className="absolute inset-0 -z-10 rounded-pill bg-lime"
+                  className="absolute inset-0 -z-10 rounded-xl bg-lime"
                   style={{ transition: "all .25s ease" }}
                 />
               )}
               <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-              <span className="font-body text-[11px] font-medium">{label}</span>
+              <span className="font-body text-[10px] font-semibold tracking-wide">{label}</span>
             </button>
           );
         })}

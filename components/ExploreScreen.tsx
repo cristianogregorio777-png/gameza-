@@ -5,7 +5,7 @@ import HeroBanner from "./HeroBanner";
 import SearchFilters from "./SearchFilters";
 import TeamCard from "./TeamCard";
 import MatchModal from "./MatchModal";
-import { MOCK_TEAMS, FILTER_PILLS } from "../lib/mock-data";
+import { TEAMS, FILTER_PILLS } from "../lib/mock-data";
 import { Team } from "../lib/types";
 
 export default function ExploreScreen() {
@@ -15,7 +15,7 @@ export default function ExploreScreen() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   const filteredTeams = useMemo(() => {
-    return MOCK_TEAMS.filter((team) => {
+    return TEAMS.filter((team) => {
       const matchesQuery =
         query.trim().length === 0 ||
         team.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -33,7 +33,9 @@ export default function ExploreScreen() {
 
   return (
     <div className="texture-noise min-h-screen pb-32">
-      <HeroBanner teamCount={MOCK_TEAMS.length} />
+      <HeroBanner
+        athleteSrc="/jogadores/19c43605-1413-41a1-84d0-ed9bc22a3a66-Photoroom.png"
+      />
 
       <SearchFilters
         query={query}
@@ -42,25 +44,15 @@ export default function ExploreScreen() {
         onFilterChange={setActiveFilter}
       />
 
-      <div className="mt-5 px-4">
-        <p className="font-body mb-3 text-sm font-medium text-ink-mute">
-          {filteredTeams.length} times disponíveis
-        </p>
-
-        {filteredTeams.length === 0 ? (
-          <div className="rounded-card border border-dashed border-line py-14 text-center">
-            <p className="font-body text-sm text-ink-mute">
-              Nenhum time encontrado com esses filtros.
-            </p>
-          </div>
-        ) : (
+      {filteredTeams.length > 0 && (
+        <div className="mt-5 px-4">
           <div className="grid grid-cols-2 gap-3">
             {filteredTeams.map((team) => (
               <TeamCard key={team.id} team={team} onMarcarJogo={setSelectedTeam} />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <MatchModal team={selectedTeam} onClose={() => setSelectedTeam(null)} />
     </div>

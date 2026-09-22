@@ -12,7 +12,7 @@ interface MatchModalProps {
 
 function buildWhatsAppLink(team: Team, date: string, time: string, local: string) {
   const message =
-    `Olá ${team.captainName}! 👋 Sou da Gameza e gostava de marcar um jogo ` +
+    `Olá ${team.captainName}! 👋 Sou dos Raios e gostava de marcar um jogo ` +
     `contra o ${team.name}.\n\n` +
     `📅 Data: ${date}\n` +
     `⏰ Hora: ${time}\n` +

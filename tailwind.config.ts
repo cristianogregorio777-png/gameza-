@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 /**
- * GAMEZA — Design tokens
+ * RAIOS — Design tokens
  *
  * Cor:
  *  - base:      #0A0A0A  (fundo)

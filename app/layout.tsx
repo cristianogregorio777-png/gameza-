@@ -15,8 +15,8 @@ const body = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Gameza — Marca o teu jogo",
-  description: "Regista o teu time ou encontra adversários no teu bairro ou escola.",
+  title: "Raios — Marca o teu jogo",
+  description: "Raios Futebol Club: encontra adversários e marca o teu próximo jogo.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

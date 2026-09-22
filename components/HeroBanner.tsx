@@ -7,39 +7,57 @@ interface HeroBannerProps {
    * Caminho de uma imagem PNG sem fundo (atleta ou jogador ilustrado).
    * Não incluímos fotos de atletas reais aqui por direitos de imagem/autorais —
    * substitui por arte licenciada, ilustração própria da marca, ou fotos
-   * enviadas pelos próprios times da Gameza.
+   * enviadas pelos próprios times dos Raios.
    */
   athleteSrc?: string;
-  teamCount: number;
 }
 
-export default function HeroBanner({ athleteSrc, teamCount }: HeroBannerProps) {
+export default function HeroBanner({ athleteSrc }: HeroBannerProps) {
   return (
-    <div className="relative mx-4 mt-4 overflow-hidden rounded-sheet border border-line bg-gradient-to-b from-white/[0.06] to-transparent">
-      <div className="relative z-10 px-6 pt-7 pb-24">
-        <p className="font-display text-[13px] tracking-wide text-lime">
-          {teamCount} times prontos para jogar
-        </p>
-        <h1 className="font-display mt-2 max-w-[220px] text-4xl leading-[0.95] text-ink">
-          Marca o teu próximo jogo
-        </h1>
-        <p className="font-body mt-3 max-w-[240px] text-sm text-ink-mute">
-          Encontra adversários no teu bairro ou escola, sem precisar de criar
-          um time.
-        </p>
+    <section className="hero-banner relative mx-4 mt-4 min-h-[320px] overflow-hidden rounded-[26px] border border-white/[0.1] bg-[#0d1512]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_66%_48%,_rgba(182,255,60,0.12),_transparent_30%),linear-gradient(120deg,#101a16_0%,#0c1210_58%,#090c0c_100%)]" />
+
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 520 320"
+        preserveAspectRatio="none"
+        className="absolute inset-0 h-full w-full opacity-[0.1]"
+        fill="none"
+        stroke="#d7e8c9"
+        strokeWidth="1"
+      >
+        <path d="M-20 160H540" />
+        <circle cx="260" cy="160" r="52" />
+        <circle cx="260" cy="160" r="2" fill="#d7e8c9" stroke="none" />
+        <path d="M-6 76H72C99 76 120 97 120 124V196C120 223 99 244 72 244H-6" />
+        <path d="M526 76H448C421 76 400 97 400 124V196C400 223 421 244 448 244H526" />
+        <path d="M0 320L178 210M520 320L342 210" opacity=".45" />
+      </svg>
+
+      <div className="absolute left-6 top-1/2 z-10 flex max-w-[125px] -translate-y-1/2 items-start gap-3">
+        <span className="mt-1 h-12 w-0.5 shrink-0 rounded-full bg-lime" />
+        <div>
+          <h1 className="font-body text-[24px] font-semibold leading-[1.08] tracking-[-0.03em] text-ink">
+            Marca o teu jogo.
+          </h1>
+          <p className="mt-2 text-[13px] font-medium leading-snug text-lime">
+            Com a Raios.
+          </p>
+        </div>
       </div>
 
       {/* Slot do atleta — recortado, ancorado à direita, sangrando pra fora do card */}
-      <div className="pointer-events-none absolute bottom-0 right-[-8px] h-[240px] w-[190px]">
+      <div className="pointer-events-none absolute bottom-0 right-[-14px] h-[320px] w-[250px]">
         {athleteSrc ? (
           <Image
             src={athleteSrc}
             alt=""
             fill
-            className="object-contain object-bottom [filter:drop-shadow(0_18px_24px_rgba(0,0,0,0.55))]"
+            priority
+            sizes="250px"
+            className="object-contain object-bottom [filter:drop-shadow(0_18px_24px_rgba(0,0,0,0.7))]"
           />
         ) : (
-          // Fallback quando ainda não há asset: silhueta simples em SVG
           <svg
             viewBox="0 0 190 240"
             className="h-full w-full opacity-[0.14]"
@@ -60,7 +78,6 @@ export default function HeroBanner({ athleteSrc, teamCount }: HeroBannerProps) {
         )}
       </div>
 
-      <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-lime/20 blur-[70px]" />
-    </div>
+    </section>
   );
 }

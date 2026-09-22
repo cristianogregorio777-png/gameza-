@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Users, MapPin } from "lucide-react";
+import { Building2, MapPin, Users } from "lucide-react";
 import { Team } from "../lib/types";
 
 interface TeamCardProps {
@@ -22,14 +22,7 @@ export default function TeamCard({ team, onMarcarJogo }: TeamCardProps) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-line bg-surface">
-            <Image
-              src={team.logoUrl}
-              alt={`Escudo do ${team.name}`}
-              fill
-              className="object-cover"
-            />
-          </div>
+          <TeamBadge team={team} />
           <div className="min-w-0">
             <p className="font-display truncate text-lg leading-tight text-ink">
               {team.name}
@@ -65,6 +58,46 @@ export default function TeamCard({ team, onMarcarJogo }: TeamCardProps) {
           Marcar jogo
         </button>
       </div>
+    </div>
+  );
+}
+
+function TeamBadge({ team }: { team: Team }) {
+  const initials = team.name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+
+  if (team.logoUrl) {
+    return (
+      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-line bg-surface">
+        <Image
+          src={team.logoUrl}
+          alt={`Escudo do ${team.name}`}
+          fill
+          className="object-cover"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={[
+        "relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border text-sm font-bold",
+        team.associationType === "Escola"
+          ? "border-cyan/30 bg-cyan/10 text-cyan"
+          : "border-lime/30 bg-lime/10 text-lime",
+      ].join(" ")}
+      aria-label={`Identidade visual de ${team.name}`}
+    >
+      <span className="font-display text-lg tracking-wide">{initials}</span>
+      <span className="absolute -right-1 -top-1 opacity-50">
+        <Building2 size={13} />
+      </span>
     </div>
   );
 }

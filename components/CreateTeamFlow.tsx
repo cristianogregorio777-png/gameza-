@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Loader2 } from "lucide-react";
 import { AssociationType, FieldType, NewTeamDraft } from "../lib/types";
 import { useToast } from "./Toast";
@@ -41,12 +42,26 @@ async function moderateTeamContent(name: string, description: string) {
   return data as { flagged: boolean; reason: string };
 }
 
+async function verifyTurnstile(token: string) {
+  const res = await fetch("/api/turnstile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  const data = (await res.json()) as { success?: boolean; reason?: string };
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.reason || "Confirma a proteção anti-spam e tenta novamente.");
+  }
+}
+
 export default function CreateTeamFlow() {
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [draft, setDraft] = useState<NewTeamDraft>(EMPTY_DRAFT);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const { showToast } = useToast();
 
   const step = STEPS[stepIndex];
@@ -68,6 +83,12 @@ export default function CreateTeamFlow() {
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     try {
+      if (!turnstileToken) {
+        showToast("error", "Confirmação necessária", "Confirma que és uma pessoa para continuar.");
+        return;
+      }
+
+      await verifyTurnstile(turnstileToken);
       const moderation = await moderateTeamContent(draft.name, draft.description);
 
       if (moderation.flagged) {
@@ -84,7 +105,7 @@ export default function CreateTeamFlow() {
       await new Promise((r) => setTimeout(r, 500));
 
       setIsDone(true);
-      showToast("success", "Time criado!", `${draft.name} já está visível na Gameza.`);
+      showToast("success", "Time criado!", `${draft.name} já está visível nos Raios.`);
     } catch {
       showToast(
         "error",
@@ -140,7 +161,13 @@ export default function CreateTeamFlow() {
             {step === "Identidade" && <StepIdentidade draft={draft} update={update} />}
             {step === "Associação" && <StepAssociacao draft={draft} update={update} />}
             {step === "Contacto" && <StepContacto draft={draft} update={update} />}
-            {step === "Revisão" && <StepRevisao draft={draft} />}
+            {step === "Revisão" && (
+              <StepRevisao
+                draft={draft}
+                turnstileToken={turnstileToken}
+                onTurnstileToken={setTurnstileToken}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -376,7 +403,15 @@ function StepContacto({
   );
 }
 
-function StepRevisao({ draft }: { draft: NewTeamDraft }) {
+function StepRevisao({
+  draft,
+  turnstileToken,
+  onTurnstileToken,
+}: {
+  draft: NewTeamDraft;
+  turnstileToken: string;
+  onTurnstileToken: (token: string) => void;
+}) {
   const rows: [string, string][] = [
     ["Nome", draft.name],
     ["Associação", `${draft.associationType} — ${draft.origin}`],
@@ -404,6 +439,16 @@ function StepRevisao({ draft }: { draft: NewTeamDraft }) {
       {draft.description && (
         <p className="font-body mt-3 text-sm text-ink-mute">{draft.description}</p>
       )}
+      <div className="mt-4 flex justify-center">
+        <Turnstile
+          key={turnstileToken ? "verified" : "pending"}
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+          onSuccess={onTurnstileToken}
+          onExpire={() => onTurnstileToken("")}
+          onError={() => onTurnstileToken("")}
+          options={{ theme: "dark", size: "flexible" }}
+        />
+      </div>
     </div>
   );
 }

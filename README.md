@@ -1,4 +1,4 @@
-# Gameza — Frontend
+# Raios — Frontend
 
 Next.js 14 (App Router) + TypeScript + Tailwind + Framer Motion.
 
@@ -52,7 +52,7 @@ provavelmente não tem.
 
 Três caminhos práticos para preencher esse slot:
 1. Ilustração original no estilo da marca (o fallback em SVG já está lá).
-2. Fotos reais dos próprios times/jogadores cadastrados na Gameza — reforça
+2. Fotos reais dos próprios times/jogadores cadastrados nos Raios — reforça
    a identidade "casual/amador" do produto, sem risco de licenciamento.
 3. Banco de imagens licenciado (ex: fotos genéricas de futebol de rua/campo).
 
@@ -70,6 +70,33 @@ O schema do Supabase está em `supabase/schema.sql`. Ele cria as tabelas,
 índices, sincronização de perfis com `auth.users` e políticas RLS. Execute-o
 no SQL Editor do projeto Supabase antes de conectar o fluxo de criação de
 times.
+
+## Autenticação Google
+
+As ações `Criar Time` e `Perfil` exigem uma sessão Supabase. Um visitante é
+enviado para o seletor de conta Google e retorna para a aba que tentou abrir.
+
+Configure estas variáveis no `.env.local` e também nas Environment variables
+da Netlify:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://rpbojjxwptsgbeyqndlw.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+```
+
+No Supabase, ative o provider Google em Authentication > Providers. Use este
+callback OAuth no provider Google:
+
+```
+https://rpbojjxwptsgbeyqndlw.supabase.co/auth/v1/callback
+```
+
+Em Authentication > URL Configuration, adicione também a URL pública da
+aplicação como Site URL e Redirect URL. Execute
+`supabase/schema.sql` no SQL Editor; ele cria o perfil ligado a `auth.users`,
+RLS e as permissões de proprietário para times. O provider Google não é
+configurado por SQL, pois as credenciais OAuth devem permanecer no painel do
+Supabase.
 
 O endpoint `POST /api/moderate` recebe `{ "textToModerate": "..." }` e retorna
 `{ "flagged": true|false, "reason": "..." }`. A rota usa o SDK oficial
