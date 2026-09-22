@@ -6,6 +6,7 @@ import ExploreScreen from "../components/ExploreScreen";
 import CreateTeamFlow from "../components/CreateTeamFlow";
 import AuthPanel from "../components/AuthPanel";
 import ClubOnboarding from "../components/ClubOnboarding";
+import ProfileDashboard from "../components/ProfileDashboard";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authReturnTab, setAuthReturnTab] = useState<Tab>("create");
   const [showClubOnboarding, setShowClubOnboarding] = useState(false);
+  const [hasClub] = useState(false);
 
   useEffect(() => {
     const requestedTab = new URLSearchParams(window.location.search).get("tab");
@@ -84,10 +86,15 @@ export default function Home() {
         />
       )}
       {tab === "profile" && isAuthenticated && !showClubOnboarding && (
-        <ClubOnboarding
-          onBack={() => setTab("explore")}
-          onCustomize={() => setTab("create")}
-          onSkip={() => setTab("explore")}
+        <ProfileDashboard
+          email={undefined}
+          hasClub={hasClub}
+          onCreateClub={() => setTab("create")}
+          onSignOut={() => {
+            void getSupabaseBrowserClient().auth.signOut();
+            setIsAuthenticated(false);
+            setTab("explore");
+          }}
         />
       )}
 

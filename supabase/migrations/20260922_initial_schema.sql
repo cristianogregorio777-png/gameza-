@@ -11,8 +11,12 @@ $$;
 create table if not exists public.users (
   id uuid primary key references auth.users (id) on delete cascade,
   email text not null,
+  onboarding_completed boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+alter table public.users
+  add column if not exists onboarding_completed boolean not null default false;
 
 create table if not exists public.locations (
   id uuid primary key default gen_random_uuid(),
