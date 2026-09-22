@@ -25,3 +25,27 @@ export async function signInWithGoogle(nextTab: "create" | "profile") {
 
   if (error) throw error;
 }
+
+export async function signInWithEmail(email: string, password: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw new Error("Email ou palavra-passe incorretos.");
+  return data;
+}
+
+export async function signUpWithEmail(email: string, password: string, name: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: name } },
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function signOut() {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}

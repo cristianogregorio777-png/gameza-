@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-AO" className={`${display.variable} ${body.variable}`}>
       <body className="bg-base font-body text-ink">
         <ToastProvider>
-          <main className="mx-auto max-w-app md:max-w-desk">{children}</main>
+          <main className="mx-auto min-h-screen max-w-app lg:max-w-[1120px] lg:px-8">{children}</main>
         </ToastProvider>
       </body>
     </html>
