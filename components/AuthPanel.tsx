@@ -73,24 +73,14 @@ export default function AuthPanel({ onBack, onAuthenticated }: AuthPanelProps) {
 
   return (
     <AuthShell onBack={onBack}>
-      <div className="mb-5 overflow-hidden rounded-[22px] border border-line bg-[radial-gradient(circle_at_top_left,rgba(182,255,60,0.12),transparent_32%),rgba(255,255,255,0.02)] p-4 shadow-[0_24px_48px_-30px_rgba(182,255,60,0.35)]">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-lime">Conta Raios</p>
-          <span className="inline-flex rounded-full border border-lime/30 bg-lime/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-lime">
-            {mode === "signin" ? "Segura" : "Novo"}
-          </span>
-        </div>
-
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <div>
-            <h1 className="font-display text-3xl leading-none text-ink">
-              {mode === "signin" ? "Aceder" : "Criar conta"}
-            </h1>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-ink-mute">
-              Organiza os teus times e acompanha os jogos da comunidade.
-            </p>
-          </div>
-        </div>
+      <div className="mb-5 rounded-[22px] border border-line bg-[radial-gradient(circle_at_top_left,rgba(182,255,60,0.08),transparent_38%),rgba(255,255,255,0.02)] p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-lime">Conta</p>
+        <h1 className="mt-3 font-display text-3xl leading-none text-ink">
+          {mode === "signin" ? "Entrar" : "Criar conta"}
+        </h1>
+        <p className="mt-2 max-w-xs text-sm leading-relaxed text-ink-mute">
+          Usa a tua conta Google ou email para gerir o teu clube.
+        </p>
       </div>
 
       <div className="mb-5 grid grid-cols-2 rounded-2xl border border-line bg-[#0d0d0d] p-1">

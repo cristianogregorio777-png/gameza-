@@ -5,12 +5,14 @@ import BottomNav, { Tab } from "../components/BottomNav";
 import ExploreScreen from "../components/ExploreScreen";
 import CreateTeamFlow from "../components/CreateTeamFlow";
 import AuthPanel from "../components/AuthPanel";
+import ClubOnboarding from "../components/ClubOnboarding";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("explore");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authReturnTab, setAuthReturnTab] = useState<Tab>("profile");
+  const [authReturnTab, setAuthReturnTab] = useState<Tab>("create");
+  const [showClubOnboarding, setShowClubOnboarding] = useState(false);
 
   useEffect(() => {
     const requestedTab = new URLSearchParams(window.location.search).get("tab");
@@ -18,15 +20,21 @@ export default function Home() {
     try {
       const supabase = getSupabaseBrowserClient();
       void supabase.auth.getSession().then(({ data }) => {
-        setIsAuthenticated(Boolean(data.session));
+        const sessionExists = Boolean(data.session);
+        setIsAuthenticated(sessionExists);
+
         if (requestedTab === "create" || requestedTab === "profile") {
           setAuthReturnTab(requestedTab);
-          setTab(data.session ? requestedTab : "profile");
+          setTab(sessionExists ? requestedTab : "profile");
         }
       });
 
       const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-        setIsAuthenticated(Boolean(session));
+        const sessionExists = Boolean(session);
+        setIsAuthenticated(sessionExists);
+        if (!sessionExists) {
+          setShowClubOnboarding(false);
+        }
       });
 
       return () => data.subscription.unsubscribe();
@@ -38,6 +46,7 @@ export default function Home() {
   const handleTabChange = async (nextTab: Tab) => {
     if (nextTab === "explore" || isAuthenticated) {
       setTab(nextTab);
+      if (nextTab !== "profile") setShowClubOnboarding(false);
       return;
     }
 
@@ -45,14 +54,40 @@ export default function Home() {
     setTab("profile");
   };
 
+  const handleAuthenticated = () => {
+    setIsAuthenticated(true);
+    setShowClubOnboarding(true);
+    setTab("profile");
+  };
+
   return (
     <>
       {tab === "explore" && <ExploreScreen />}
       {tab === "create" && <CreateTeamFlow />}
-      {tab === "profile" && (
+      {tab === "profile" && !isAuthenticated && (
         <AuthPanel
           onBack={() => setTab("explore")}
-          onAuthenticated={() => setTab(authReturnTab)}
+          onAuthenticated={handleAuthenticated}
+        />
+      )}
+      {tab === "profile" && isAuthenticated && showClubOnboarding && (
+        <ClubOnboarding
+          onBack={() => setTab("explore")}
+          onCustomize={() => {
+            setShowClubOnboarding(false);
+            setTab("create");
+          }}
+          onSkip={() => {
+            setShowClubOnboarding(false);
+            setTab("explore");
+          }}
+        />
+      )}
+      {tab === "profile" && isAuthenticated && !showClubOnboarding && (
+        <ClubOnboarding
+          onBack={() => setTab("explore")}
+          onCustomize={() => setTab("create")}
+          onSkip={() => setTab("explore")}
         />
       )}
 
