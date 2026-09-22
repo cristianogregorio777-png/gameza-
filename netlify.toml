@@ -4,6 +4,12 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  NEXT_PUBLIC_SUPABASE_URL = "https://rpbojjxwptsgbeyqndlw.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_JqOeuBtTki1sOKkytuMdbg_PQ0ivJan"
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY = "0x4AAAAAAE6HvflBnXmRlcQq"
+  # Configure estas chaves secretas no painel do Netlify:
+  # SUPABASE_SERVICE_ROLE_KEY = "..."
+  # TURNSTILE_SECRET_KEY = "..."
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
