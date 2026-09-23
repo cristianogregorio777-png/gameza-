@@ -11,7 +11,7 @@ export interface Team {
   fieldType: FieldType;
   playersCount: number;
   captainName: string;
-  captainWhatsapp: string; // formato internacional: 244923xxxxxx
+  canRequestMatch?: boolean;
   description?: string;
   /** controla o span no bento grid */
   size?: "sm" | "lg";

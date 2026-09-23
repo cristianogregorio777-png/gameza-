@@ -71,7 +71,7 @@ export default function Home() {
   const handleAuthenticated = () => {
     setIsAuthenticated(true);
     setShowClubOnboarding(true);
-    setTab("profile");
+    setTab(authReturnTab);
     void fetchUserContext().then(setUserContext).catch(() => undefined);
   };
 

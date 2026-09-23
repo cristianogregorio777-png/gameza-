@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { moderateText } from "../../../lib/groq";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,7 @@ interface TeamInput {
   whatsapp?: unknown;
   description?: unknown;
   logoUrl?: unknown;
+  turnstileToken?: unknown;
 }
 
 function responseError(status: number, code: string, message: string, requestId: string) {
@@ -39,14 +41,60 @@ function getClient(accessToken: string) {
   });
 }
 
+function getPublicReadClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) throw new Error("Supabase server secret não está configurado.");
+
+  return createClient(url, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function isOwnedPublicAsset(value: string, bucket: string, userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!baseUrl || !value) return false;
+
+  try {
+    const url = new URL(value);
+    const base = new URL(baseUrl);
+    return url.origin === base.origin
+      && url.pathname.startsWith(`/storage/v1/object/public/${bucket}/${userId}/`);
+  } catch {
+    return false;
+  }
+}
+
+async function verifyTurnstile(token: string, request: NextRequest) {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret || !token) return false;
+
+  const formData = new URLSearchParams({ secret, response: token });
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) formData.set("remoteip", forwardedFor.split(",")[0].trim());
+
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData.toString(),
+      signal: AbortSignal.timeout(10000),
+    });
+    const result = (await response.json()) as { success?: boolean };
+    return response.ok && result.success === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { requestId } = getRequestContext(request);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !anonKey) return responseError(503, "DATABASE_UNAVAILABLE", "A base de dados não está configurada.", requestId);
+  if (!url || !serviceRoleKey) return responseError(503, "DATABASE_UNAVAILABLE", "A listagem de times está temporariamente indisponível.", requestId);
 
-  const supabase = createClient(url, anonKey, { auth: { persistSession: false } });
+  const supabase = getPublicReadClient();
   const { data, error } = await supabase
     .from("teams")
     .select("id, name, logo_url, association_type, origin, modality, home_field, whatsapp_number, description")
@@ -67,7 +115,7 @@ export async function GET(request: NextRequest) {
     fieldType: team.modality,
     playersCount: 0,
     captainName: "Capitão do time",
-    captainWhatsapp: team.whatsapp_number || "",
+    canRequestMatch: Boolean(team.whatsapp_number),
     description: team.description || "",
     size: "sm",
   })) }, { headers: { "X-Request-Id": requestId, "Cache-Control": "no-store" } });
@@ -94,20 +142,39 @@ export async function POST(request: NextRequest) {
   const location = text(input.location);
   const whatsapp = text(input.whatsapp);
   const description = text(input.description);
-  const associationType = input.associationType === "Escola" ? "SCHOOL" : "NEIGHBORHOOD";
+  const associationType = input.associationType === "Escola"
+    ? "SCHOOL"
+    : input.associationType === "Bairro"
+      ? "NEIGHBORHOOD"
+      : "";
   const modality = text(input.fieldType);
 
   if (name.length < 3 || name.length > 80) return responseError(422, "INVALID_NAME", "O nome deve ter entre 3 e 80 caracteres.", requestId);
   if (origin.length < 2 || origin.length > 100) return responseError(422, "INVALID_ORIGIN", "Indica um bairro ou escola válido.", requestId);
   if (location.length < 2 || location.length > 120) return responseError(422, "INVALID_LOCATION", "Indica o campo habitual.", requestId);
   if (whatsapp.replace(/\D/g, "").length < 9) return responseError(422, "INVALID_CONTACT", "Indica um WhatsApp válido com código do país.", requestId);
-  if (!modality) return responseError(422, "INVALID_MODALITY", "Seleciona o tipo de jogo.", requestId);
+  if (!["Futsal", "Futebol 11", "Society"].includes(modality)) return responseError(422, "INVALID_MODALITY", "Seleciona um tipo de jogo válido.", requestId);
+  if (!associationType) return responseError(422, "INVALID_ASSOCIATION", "Seleciona uma associação válida.", requestId);
   if (description.length > 500) return responseError(422, "INVALID_DESCRIPTION", "A descrição deve ter no máximo 500 caracteres.", requestId);
 
   try {
     const supabase = getClient(accessToken);
     const { data: authData, error: authError } = await supabase.auth.getUser(accessToken);
     if (authError || !authData.user) return responseError(401, "INVALID_SESSION", "A sessão expirou. Entra novamente.", requestId);
+
+    const turnstileToken = text(input.turnstileToken);
+    if (!(await verifyTurnstile(turnstileToken, request))) {
+      return responseError(403, "TURNSTILE_FAILED", "Confirma a proteção anti-spam e tenta novamente.", requestId);
+    }
+
+    const moderation = await moderateText(`NOME: ${name}\nDESCRIÇÃO: ${description}`);
+    if (moderation.flagged) {
+      return responseError(422, "CONTENT_REJECTED", moderation.reason || "Revê o nome ou a descrição do teu time.", requestId);
+    }
+
+    if (input.logoUrl && !isOwnedPublicAsset(text(input.logoUrl), "logosdostimes", authData.user.id)) {
+      return responseError(422, "INVALID_LOGO", "A logo enviada não é válida.", requestId);
+    }
 
     const { data, error } = await supabase.from("teams").insert({
       owner_id: authData.user.id,

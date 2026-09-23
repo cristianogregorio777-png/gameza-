@@ -14,7 +14,7 @@ interface HeroBannerProps {
 
 export default function HeroBanner({ athleteSrc }: HeroBannerProps) {
   return (
-    <section className="hero-banner relative mx-4 mt-4 min-h-[320px] overflow-hidden rounded-sheet border border-cream/15 bg-navy-deep">
+    <section className="hero-banner relative mx-4 mt-4 min-h-[320px] overflow-hidden rounded-sheet border border-cream/15 bg-navy-deep lg:mx-auto lg:mt-8 lg:min-h-[380px] lg:max-w-[960px]">
       <div className="absolute inset-0 bg-navy-deep" />
 
       <svg
@@ -34,20 +34,20 @@ export default function HeroBanner({ athleteSrc }: HeroBannerProps) {
         <path d="M0 320L178 210M520 320L342 210" opacity=".45" />
       </svg>
 
-      <div className="absolute left-6 top-1/2 z-10 flex max-w-[125px] -translate-y-1/2 items-start gap-3">
+      <div className="absolute left-6 top-1/2 z-10 flex max-w-[125px] -translate-y-1/2 items-start gap-3 lg:left-12 lg:max-w-[260px]">
         <span className="mt-1 h-12 w-0.5 shrink-0 bg-orange" />
         <div>
-          <h1 className="font-display text-[27px] font-bold leading-[1.05] text-cream">
+          <h1 className="font-display text-[27px] font-bold leading-[1.05] text-cream lg:text-5xl">
             Marca o teu jogo.
           </h1>
-          <p className="mt-2 text-[13px] font-semibold leading-snug text-orange">
+          <p className="mt-2 text-[13px] font-semibold leading-snug text-orange lg:text-base">
             Com a Raios.
           </p>
         </div>
       </div>
 
       {/* Slot do atleta — recortado, ancorado à direita, sangrando pra fora do card */}
-      <div className="pointer-events-none absolute bottom-0 right-[-14px] h-[320px] w-[250px]">
+      <div className="pointer-events-none absolute bottom-0 right-[-14px] h-[320px] w-[250px] lg:right-8 lg:h-[380px] lg:w-[340px]">
         {athleteSrc ? (
           <Image
             src={athleteSrc}

@@ -15,6 +15,20 @@ function fail(status: number, code: string, message: string, requestId: string) 
   return NextResponse.json({ error: { code, message, requestId } }, { status });
 }
 
+function isOwnedPublicAvatar(value: string, userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!baseUrl || !value) return false;
+
+  try {
+    const url = new URL(value);
+    const base = new URL(baseUrl);
+    return url.origin === base.origin
+      && url.pathname.startsWith(`/storage/v1/object/public/avatars/${userId}/`);
+  } catch {
+    return false;
+  }
+}
+
 function client(accessToken: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -76,7 +90,9 @@ export async function PATCH(request: NextRequest) {
 
   if (displayName.length < 2 || displayName.length > 80) return fail(422, "INVALID_DISPLAY_NAME", "O nome deve ter entre 2 e 80 caracteres.", context.requestId);
   if (bio.length > 240) return fail(422, "INVALID_BIO", "A bio deve ter no máximo 240 caracteres.", context.requestId);
-  if (avatarUrl && avatarUrl.length > 500) return fail(422, "INVALID_AVATAR", "A imagem do avatar não é válida.", context.requestId);
+  if (avatarUrl && (avatarUrl.length > 500 || !isOwnedPublicAvatar(avatarUrl, context.user.id))) {
+    return fail(422, "INVALID_AVATAR", "A imagem do avatar não é válida.", context.requestId);
+  }
 
   const { data, error } = await context.supabase!
     .from("users")

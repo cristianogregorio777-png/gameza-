@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { Team } from "../lib/types";
+import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
 interface MatchModalProps {
   team: Team | null;
   onClose: () => void;
 }
 
-function buildWhatsAppLink(team: Team, date: string, time: string, local: string) {
+function buildMatchMessage(team: Team, date: string, time: string, local: string) {
   const message =
     `Olá ${team.captainName}! 👋 Sou dos Raios e gostava de marcar um jogo ` +
     `contra o ${team.name}.\n\n` +
@@ -19,25 +20,45 @@ function buildWhatsAppLink(team: Team, date: string, time: string, local: string
     `📍 Local sugerido: ${local}\n\n` +
     `Ficas a jeito?`;
 
-  const phone = team.captainWhatsapp.replace(/\D/g, "");
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  return message;
 }
 
 export default function MatchModal({ team, onClose }: MatchModalProps) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [local, setLocal] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [feedback, setFeedback] = useState("");
 
   const isValid = date && time && local.trim().length > 2;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!team || !isValid) return;
-    const link = buildWhatsAppLink(team, date, time, local.trim());
-    window.open(link, "_blank", "noopener,noreferrer");
-    onClose();
-    setDate("");
-    setTime("");
-    setLocal("");
+    setFeedback("");
+    setIsSending(true);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Inicia sessão para enviar um pedido de jogo.");
+
+      const response = await fetch(`/api/teams/${team.id}/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+        body: JSON.stringify({ message: buildMatchMessage(team, date, time, local.trim()) }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error?.message || "Não foi possível enviar o pedido.");
+
+      window.open(payload.contactUrl, "_blank", "noopener,noreferrer");
+      onClose();
+      setDate("");
+      setTime("");
+      setLocal("");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Não foi possível enviar o pedido.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -65,6 +86,9 @@ export default function MatchModal({ team, onClose }: MatchModalProps) {
             onDragEnd={(_, info) => {
               if (info.offset.y > 120) onClose();
             }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="match-dialog-title"
             className="fixed inset-x-0 bottom-0 z-[70] mx-auto max-w-app rounded-t-sheet border-t border-cream/20 bg-navy-deep px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
           >
             <div className="mx-auto h-1 w-10 rounded-pill bg-cream/25" />
@@ -72,7 +96,7 @@ export default function MatchModal({ team, onClose }: MatchModalProps) {
             <div className="mt-4 flex items-start justify-between">
               <div>
                 <p className="font-body text-xs text-ink-mute">Marcar jogo contra</p>
-                <h2 className="font-display text-2xl text-ink">{team.name}</h2>
+                <h2 id="match-dialog-title" className="font-display text-2xl text-ink">{team.name}</h2>
               </div>
               <button
                 onClick={onClose}
@@ -115,11 +139,12 @@ export default function MatchModal({ team, onClose }: MatchModalProps) {
 
             <button
               onClick={handleSubmit}
-              disabled={!isValid}
+              disabled={!isValid || isSending || !team.canRequestMatch}
               className="font-body mt-6 w-full rounded-pill bg-orange py-3.5 text-sm font-bold text-cream transition-opacity disabled:opacity-30"
             >
-              Enviar para o capitão no WhatsApp
+              {isSending ? <><Loader2 size={16} className="animate-spin" /> A preparar pedido…</> : team.canRequestMatch ? "Enviar pedido no WhatsApp" : "Contacto indisponível"}
             </button>
+            {feedback && <p className="mt-3 text-center text-sm text-danger" role="alert">{feedback}</p>}
           </motion.div>
         </>
       )}

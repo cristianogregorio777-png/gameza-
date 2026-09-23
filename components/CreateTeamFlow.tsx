@@ -6,6 +6,7 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Loader2 } from "lucide-react";
 import { AssociationType, FieldType, NewTeamDraft } from "../lib/types";
 import { useToast } from "./Toast";
+import { uploadTeamLogo } from "../lib/supabase-browser";
 
 const STEPS = ["Identidade", "Associação", "Contacto", "Revisão"] as const;
 type StepId = (typeof STEPS)[number];
@@ -22,40 +23,16 @@ const EMPTY_DRAFT: NewTeamDraft = {
   description: "",
 };
 
-/** Chama o Route Handler que faz a moderação via Groq no servidor. */
-async function moderateTeamContent(name: string, description: string) {
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 10000);
-  let res: Response;
-  try {
-    res = await fetch("/api/moderate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ textToModerate: `NOME: ${name}\nDESCRIÇÃO: ${description}` }),
-      signal: controller.signal,
-    });
-  } catch (error) {
-    console.error("[teams:create] moderation network failure", error);
-    throw new Error("Não foi possível contactar a moderação. Verifica a ligação e tenta novamente.");
-  } finally {
-    window.clearTimeout(timeout);
-  }
-
-  const data = await res.json().catch(() => ({}));
-  console.info("[teams:create] moderation response", { status: res.status, body: data });
-
-  if (!res.ok) {
-    throw new Error(data.reason ?? "A moderação está indisponível. Tenta novamente.");
-  }
-
-  return data as { flagged: boolean; reason: string };
-}
-
-async function createTeam(draft: NewTeamDraft) {
+async function createTeam(draft: NewTeamDraft, turnstileToken: string) {
   const supabase = (await import("../lib/supabase-browser")).getSupabaseBrowserClient();
   const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (!accessToken) throw new Error("Inicia sessão antes de publicar o clube.");
+  const session = sessionData.session;
+  if (!session) throw new Error("Inicia sessão antes de publicar o clube.");
+  const accessToken = session.access_token;
+
+  const logoUrl = draft.logoFile
+    ? await uploadTeamLogo(draft.logoFile, session.user.id)
+    : "";
 
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 15000);
@@ -63,7 +40,7 @@ async function createTeam(draft: NewTeamDraft) {
     const response = await fetch("/api/teams", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-      body: JSON.stringify(draft),
+      body: JSON.stringify({ ...draft, logoUrl, turnstileToken }),
       signal: controller.signal,
     });
     const data = await response.json().catch(() => ({}));
@@ -78,19 +55,6 @@ async function createTeam(draft: NewTeamDraft) {
     throw error;
   } finally {
     window.clearTimeout(timeout);
-  }
-}
-
-async function verifyTurnstile(token: string) {
-  const res = await fetch("/api/turnstile", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token }),
-  });
-  const data = (await res.json()) as { success?: boolean; reason?: string };
-
-  if (!res.ok || !data.success) {
-    throw new Error(data.reason || "Confirma a proteção anti-spam e tenta novamente.");
   }
 }
 
@@ -129,19 +93,7 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
         return;
       }
 
-      await verifyTurnstile(turnstileToken);
-      const moderation = await moderateTeamContent(draft.name, draft.description);
-
-      if (moderation.flagged) {
-        showToast(
-          "error",
-          "Conteúdo bloqueado pela moderação",
-          moderation.reason || "Revê o nome ou a descrição do teu time e tenta de novo."
-        );
-        return;
-      }
-
-      await createTeam(draft);
+      await createTeam(draft, turnstileToken);
 
       setIsDone(true);
       showToast("success", "Time criado!", `${draft.name} já está visível nos Raios.`);
@@ -311,6 +263,12 @@ function StepIdentidade({
   update: <K extends keyof NewTeamDraft>(key: K, value: NewTeamDraft[K]) => void;
 }) {
   const onLogoChange = (file: File | null) => {
+    if (draft.logoPreview) URL.revokeObjectURL(draft.logoPreview);
+    if (file && (!new Set(["image/png", "image/jpeg", "image/webp"]).has(file.type) || file.size > 2 * 1024 * 1024)) {
+      update("logoFile", null);
+      update("logoPreview", null);
+      return;
+    }
     update("logoFile", file);
     update("logoPreview", file ? URL.createObjectURL(file) : null);
   };
@@ -333,7 +291,7 @@ function StepIdentidade({
         )}
         <input
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/webp"
           className="hidden"
           onChange={(e) => onLogoChange(e.target.files?.[0] ?? null)}
         />
@@ -343,6 +301,7 @@ function StepIdentidade({
         <input
           value={draft.name}
           onChange={(e) => update("name", e.target.value)}
+          maxLength={80}
           placeholder="Ex: Leões do Camama"
           className="field-input"
         />
@@ -383,6 +342,7 @@ function StepAssociacao({
         <input
           value={draft.origin}
           onChange={(e) => update("origin", e.target.value)}
+          maxLength={100}
           placeholder="Ex: Camama"
           className="field-input"
         />
@@ -392,6 +352,7 @@ function StepAssociacao({
         <input
           value={draft.location}
           onChange={(e) => update("location", e.target.value)}
+          maxLength={120}
           placeholder="Ex: Campo da Rotunda"
           className="field-input"
         />
@@ -432,6 +393,7 @@ function StepContacto({
         <input
           value={draft.whatsapp}
           onChange={(e) => update("whatsapp", e.target.value)}
+          maxLength={30}
           placeholder="244 923 000 000"
           inputMode="tel"
           className="field-input"
@@ -442,6 +404,7 @@ function StepContacto({
         <textarea
           value={draft.description}
           onChange={(e) => update("description", e.target.value)}
+          maxLength={500}
           placeholder="Conta um pouco sobre o time: quando jogam, o nível, o espírito..."
           rows={4}
           className="field-input resize-none"

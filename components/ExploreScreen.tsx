@@ -61,8 +61,8 @@ export default function ExploreScreen() {
       />
 
       {filteredTeams.length > 0 && (
-        <div className="mt-5 px-4">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="mx-auto mt-5 max-w-[960px] px-4 lg:px-0">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5">
             {filteredTeams.map((team) => (
               <TeamCard key={team.id} team={team} onMarcarJogo={setSelectedTeam} />
             ))}

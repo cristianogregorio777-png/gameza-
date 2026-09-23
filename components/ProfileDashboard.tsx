@@ -82,7 +82,7 @@ export default function ProfileDashboard({ email, hasClub, onCreateClub, onSignO
 
   return (
     <section className="min-h-screen px-4 pb-28 pt-6 lg:flex lg:min-h-[calc(100vh-2rem)] lg:items-center lg:justify-center">
-      <div className="w-full max-w-[480px]">
+      <div className="w-full max-w-[620px] lg:rounded-[30px] lg:border lg:border-cream/15 lg:bg-navy-deep lg:p-8 lg:shadow-soft">
         <div className="flex items-center gap-3 border-b border-line pb-5">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange text-cream">
             <UserRound size={20} />
@@ -104,10 +104,11 @@ export default function ProfileDashboard({ email, hasClub, onCreateClub, onSignO
               {avatarUrl ? <Image src={avatarUrl} alt="Avatar do perfil" width={56} height={56} unoptimized className="h-full w-full object-cover" /> : <UserRound size={20} />}
               <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => {
                 const file = event.target.files?.[0] || null;
-                if (file && (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024)) {
+                if (file && (!new Set(["image/png", "image/jpeg", "image/webp"]).has(file.type) || file.size > 2 * 1024 * 1024)) {
                   setFeedback({ kind: "error", message: "Escolhe PNG, JPG ou WebP com no máximo 2 MB." });
                   return;
                 }
+                if (avatarUrl?.startsWith("blob:")) URL.revokeObjectURL(avatarUrl);
                 setAvatarFile(file);
                 if (file) setAvatarUrl(URL.createObjectURL(file));
               }} />

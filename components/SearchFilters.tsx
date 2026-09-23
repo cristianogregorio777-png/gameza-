@@ -17,10 +17,11 @@ export default function SearchFilters({
   onFilterChange,
 }: SearchFiltersProps) {
   return (
-    <div className="mt-6 px-4">
+    <div className="mx-auto mt-6 max-w-[960px] px-4 lg:px-0">
       <div className="flex items-center gap-2 rounded-card border border-cream/15 bg-navy-deep px-4 py-3">
         <Search size={18} className="text-ink-mute" />
         <input
+          aria-label="Procurar time ou bairro"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Procurar time ou bairro"
