@@ -120,7 +120,7 @@ export default function CreateTeamFlow() {
   if (isDone) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
-        <CheckCircle2 size={48} className="text-lime" />
+        <CheckCircle2 size={48} className="text-gold" />
         <h2 className="font-display mt-4 text-3xl text-ink">Time criado</h2>
         <p className="font-body mt-2 max-w-xs text-sm text-ink-mute">
           {draft.name} já pode ser encontrado por outros times na aba Explorar.
@@ -131,7 +131,7 @@ export default function CreateTeamFlow() {
             setStepIndex(0);
             setIsDone(false);
           }}
-          className="font-body mt-8 rounded-pill bg-lime px-6 py-3 text-sm font-semibold text-base"
+          className="font-body mt-8 rounded-pill bg-orange px-6 py-3 text-sm font-bold text-cream"
         >
           Criar outro time
         </button>
@@ -187,7 +187,7 @@ export default function CreateTeamFlow() {
           <button
             onClick={goNext}
             disabled={!canAdvance(step, draft)}
-            className="font-body flex flex-1 items-center justify-center gap-2 rounded-pill bg-lime py-3.5 text-sm font-semibold text-base disabled:opacity-30"
+            className="font-body flex flex-1 items-center justify-center gap-2 rounded-pill bg-orange py-3.5 text-sm font-bold text-cream disabled:opacity-30"
           >
             Continuar
             <ArrowRight size={16} />
@@ -196,7 +196,7 @@ export default function CreateTeamFlow() {
           <button
             onClick={handleFinalSubmit}
             disabled={isSubmitting}
-            className="font-body flex flex-1 items-center justify-center gap-2 rounded-pill bg-lime py-3.5 text-sm font-semibold text-base disabled:opacity-60"
+            className="font-body flex flex-1 items-center justify-center gap-2 rounded-pill bg-orange py-3.5 text-sm font-bold text-cream disabled:opacity-60"
           >
             {isSubmitting ? (
               <>
@@ -244,7 +244,7 @@ function StepHeader({ stepIndex }: { stepIndex: number }) {
             key={s}
             className={[
               "h-1 flex-1 rounded-pill transition-colors",
-              i <= stepIndex ? "bg-lime" : "bg-white/10",
+              i <= stepIndex ? "bg-orange" : "bg-cream/15",
             ].join(" ")}
           />
         ))}
@@ -269,7 +269,7 @@ function StepIdentidade({
 
   return (
     <div className="space-y-5">
-      <label className="mx-auto flex h-28 w-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-full border border-dashed border-line bg-white/[0.03]">
+      <label className="mx-auto flex h-28 w-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-full border border-dashed border-cream/25 bg-navy-soft">
         {draft.logoPreview ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -321,8 +321,8 @@ function StepAssociacao({
               className={[
                 "flex-1 rounded-card border py-3 text-sm font-medium transition-colors",
                 draft.associationType === opt
-                  ? "border-lime bg-lime/10 text-lime"
-                  : "border-line text-ink-mute",
+                  ? "border-orange bg-orange/15 text-orange"
+                  : "border-cream/15 text-ink-mute",
               ].join(" ")}
             >
               {opt}
@@ -358,8 +358,8 @@ function StepAssociacao({
               className={[
                 "rounded-pill border px-4 py-2 text-[13px] font-medium transition-colors",
                 draft.fieldType === opt
-                  ? "border-cyan bg-cyan/10 text-cyan"
-                  : "border-line text-ink-mute",
+                  ? "border-olive bg-olive text-cream"
+                  : "border-cream/15 text-ink-mute",
               ].join(" ")}
             >
               {opt}
@@ -421,7 +421,7 @@ function StepRevisao({
   ];
 
   return (
-    <div className="rounded-card border border-line bg-white/[0.03] p-4">
+    <div className="rounded-card border border-cream/15 bg-navy-soft p-4">
       <p className="font-body mb-3 text-xs text-ink-mute">
         Confirma os dados antes de enviar. O nome e a descrição passam por uma
         validação automática antes do time ficar visível.

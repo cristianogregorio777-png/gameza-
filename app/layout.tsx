@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Anton, Inter } from "next/font/google";
+import { DM_Sans, Roboto_Slab } from "next/font/google";
 import { ToastProvider } from "../components/Toast";
 import "./globals.css";
 
-const display = Anton({
+const display = Roboto_Slab({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-display",
 });
 
-const body = Inter({
+const body = DM_Sans({
   subsets: ["latin"],
   variable: "--font-body",
 });

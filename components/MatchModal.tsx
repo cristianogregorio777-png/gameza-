@@ -50,7 +50,7 @@ export default function MatchModal({ team, onClose }: MatchModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-navy-deep/80 backdrop-blur-sm"
           />
 
           <motion.div
@@ -65,9 +65,9 @@ export default function MatchModal({ team, onClose }: MatchModalProps) {
             onDragEnd={(_, info) => {
               if (info.offset.y > 120) onClose();
             }}
-            className="fixed inset-x-0 bottom-0 z-[70] mx-auto max-w-app rounded-t-sheet border-t border-line bg-surface px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+            className="fixed inset-x-0 bottom-0 z-[70] mx-auto max-w-app rounded-t-sheet border-t border-cream/20 bg-navy-deep px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
           >
-            <div className="mx-auto h-1 w-10 rounded-pill bg-white/15" />
+            <div className="mx-auto h-1 w-10 rounded-pill bg-cream/25" />
 
             <div className="mt-4 flex items-start justify-between">
               <div>
@@ -76,7 +76,7 @@ export default function MatchModal({ team, onClose }: MatchModalProps) {
               </div>
               <button
                 onClick={onClose}
-                className="rounded-full border border-line p-2 text-ink-mute hover:text-ink"
+                className="rounded-full border border-cream/20 p-2 text-ink-mute hover:text-cream"
                 aria-label="Fechar"
               >
                 <X size={16} />
@@ -116,7 +116,7 @@ export default function MatchModal({ team, onClose }: MatchModalProps) {
             <button
               onClick={handleSubmit}
               disabled={!isValid}
-              className="font-body mt-6 w-full rounded-pill bg-lime py-3.5 text-sm font-semibold text-base transition-opacity disabled:opacity-30"
+              className="font-body mt-6 w-full rounded-pill bg-orange py-3.5 text-sm font-bold text-cream transition-opacity disabled:opacity-30"
             >
               Enviar para o capitão no WhatsApp
             </button>

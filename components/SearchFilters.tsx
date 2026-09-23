@@ -18,7 +18,7 @@ export default function SearchFilters({
 }: SearchFiltersProps) {
   return (
     <div className="mt-6 px-4">
-      <div className="flex items-center gap-2 rounded-pill border border-line bg-white/[0.04] px-4 py-3 backdrop-blur-glass">
+      <div className="flex items-center gap-2 rounded-card border border-cream/15 bg-navy-deep px-4 py-3">
         <Search size={18} className="text-ink-mute" />
         <input
           value={query}
@@ -38,8 +38,8 @@ export default function SearchFilters({
               className={[
                 "font-body shrink-0 rounded-pill border px-4 py-1.5 text-[13px] font-medium transition-colors",
                 isActive
-                  ? "border-lime bg-lime text-base"
-                  : "border-line bg-white/[0.03] text-ink-mute hover:text-ink",
+                  ? "border-orange bg-orange text-cream"
+                  : "border-cream/15 bg-navy-soft text-ink-mute hover:border-cream/30 hover:text-cream",
               ].join(" ")}
             >
               {pill}

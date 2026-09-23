@@ -1,25 +1,5 @@
 import type { Config } from "tailwindcss";
 
-/**
- * RAIOS — Design tokens
- *
- * Cor:
- *  - base:      #0A0A0A  (fundo)
- *  - surface:   #131313  (painéis sólidos, ex. bottom sheet)
- *  - glass:     rgba(255,255,255,.04) + blur (cards)
- *  - line:      rgba(255,255,255,.08) (bordas translúcidas)
- *  - lime:      #B6FF3C  (CTA primário — "marcar jogo")
- *  - cyan:      #2BF0D9  (acento secundário — futsal / info)
- *  - ink:       #F4F4EF  (texto primário)
- *  - mute:      #8C8C86  (texto secundário)
- *
- * Tipografia:
- *  - Display "Ozzy"  -> substituto: 'Anton' (condensada, robusta — números
- *    de camisa, placares, títulos). Usada como elemento visual ativo, não
- *    só como rótulo.
- *  - Corpo "Ground"  -> substituto: 'Inter' (legibilidade em telas pequenas).
- */
-
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -28,25 +8,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        base: "#0A0A0A",
-        surface: "#131313",
-        line: "rgba(255,255,255,0.08)",
-        lime: {
-          DEFAULT: "#B6FF3C",
-          dim: "#8FCC2E",
+        base: "#16324F",
+        "navy-deep": "#10263D",
+        "navy-soft": "#244461",
+        surface: "#1B3B59",
+        "surface-raised": "#244461",
+        line: "rgba(245,232,214,0.18)",
+        orange: {
+          DEFAULT: "#F0791E",
+          dim: "#C85E12",
         },
-        cyan: {
-          DEFAULT: "#2BF0D9",
-          dim: "#22BFAD",
+        cream: "#F5E8D6",
+        olive: {
+          DEFAULT: "#4B5D45",
+          dim: "#384635",
         },
+        gold: "#F2BE3D",
+        warning: "#F2BE3D",
+        danger: "#D95C4F",
         ink: {
-          DEFAULT: "#F4F4EF",
-          mute: "#8C8C86",
-          faint: "#5A5A55",
+          DEFAULT: "#F5E8D6",
+          mute: "#C6C1B6",
+          faint: "#8E9BA5",
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "sans-serif"],
+        display: ["var(--font-display)", "serif"],
         body: ["var(--font-body)", "sans-serif"],
       },
       borderRadius: {
@@ -58,8 +45,8 @@ const config: Config = {
         glass: "18px",
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(182,255,60,0.25), 0 8px 24px -8px rgba(182,255,60,0.35)",
-        soft: "0 12px 40px -16px rgba(0,0,0,0.6)",
+        glow: "0 0 0 1px rgba(240,121,30,0.3), 0 12px 30px -14px rgba(240,121,30,0.45)",
+        soft: "0 16px 40px -20px rgba(16,38,61,0.8)",
       },
       maxWidth: {
         app: "430px",

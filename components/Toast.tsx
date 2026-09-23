@@ -65,14 +65,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 "pointer-events-auto w-full max-w-sm rounded-card border px-4 py-3",
                 "backdrop-blur-glass shadow-soft flex items-start gap-3",
                 t.kind === "error"
-                  ? "bg-red-500/10 border-red-500/25"
-                  : "bg-lime/10 border-lime/25",
+                  ? "bg-danger/30 border-danger/60"
+                  : "bg-olive/90 border-cream/20",
               ].join(" ")}
             >
               {t.kind === "error" ? (
-                <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-400" />
+                <AlertTriangle size={18} className="mt-0.5 shrink-0 text-cream" />
               ) : (
-                <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-lime" />
+                <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-cream" />
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-body text-sm font-semibold text-ink">

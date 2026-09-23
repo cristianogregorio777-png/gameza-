@@ -14,23 +14,23 @@ export default function ProfileDashboard({ email, hasClub, onCreateClub, onSignO
     <section className="min-h-screen px-4 pb-28 pt-6 lg:flex lg:min-h-[calc(100vh-2rem)] lg:items-center lg:justify-center">
       <div className="w-full max-w-[480px]">
         <div className="flex items-center gap-3 border-b border-line pb-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-lime text-base">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange text-cream">
             <UserRound size={20} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-lime">Perfil</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange">Perfil</p>
             <h1 className="mt-1 text-xl font-semibold text-ink">A tua conta</h1>
           </div>
         </div>
 
-        <div className="mt-6 rounded-[22px] border border-line bg-white/[0.02] p-4">
+        <div className="mt-6 rounded-[22px] border border-cream/15 bg-navy-soft p-4">
           <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">Email</p>
           <p className="mt-2 break-all text-sm text-ink">{email || "Conta Raios"}</p>
         </div>
 
-        <div className="mt-3 rounded-[22px] border border-line bg-white/[0.02] p-4">
+        <div className="mt-3 rounded-[22px] border border-cream/15 bg-navy-soft p-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan/10 text-cyan">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-olive text-cream">
               <Shield size={17} />
             </div>
             <div className="flex-1">
@@ -41,7 +41,7 @@ export default function ProfileDashboard({ email, hasClub, onCreateClub, onSignO
             </div>
           </div>
           {!hasClub && (
-            <button onClick={onCreateClub} className="mt-4 flex w-full items-center justify-center gap-2 rounded-pill bg-lime py-3 text-sm font-bold text-base">
+            <button onClick={onCreateClub} className="mt-4 flex w-full items-center justify-center gap-2 rounded-pill bg-orange py-3 text-sm font-bold text-cream">
               Criar clube
               <ArrowRight size={16} />
             </button>

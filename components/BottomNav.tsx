@@ -21,7 +21,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
       className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
       aria-label="Navegação principal"
     >
-      <div className="flex w-full max-w-app items-center justify-between gap-1 rounded-card border border-line bg-[#151815]/95 px-2 py-2 backdrop-blur-glass shadow-soft">
+      <div className="flex w-full max-w-app items-center justify-between gap-1 rounded-card border border-cream/15 bg-navy-deep/95 px-2 py-2 backdrop-blur-glass shadow-soft">
         {TABS.map(({ id, label, icon: Icon }) => {
           const isActive = active === id;
           return (
@@ -30,13 +30,13 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
               onClick={() => onChange(id)}
               className={[
                 "relative flex flex-1 flex-col items-center gap-1 rounded-xl py-2.5 transition-colors",
-                isActive ? "text-base" : "text-ink-mute hover:bg-white/[0.04] hover:text-ink",
+                isActive ? "text-cream" : "text-ink-mute hover:bg-cream/5 hover:text-cream",
               ].join(" ")}
               aria-current={isActive ? "page" : undefined}
             >
               {isActive && (
                 <span
-                  className="absolute inset-0 -z-10 rounded-xl bg-lime"
+                  className="absolute inset-0 -z-10 rounded-xl bg-orange"
                   style={{ transition: "all .25s ease" }}
                 />
               )}

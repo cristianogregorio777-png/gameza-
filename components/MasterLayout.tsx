@@ -16,7 +16,7 @@ export default function MasterLayout({ session, hasClub, active, children }: Mas
     <div className="min-h-screen lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="hidden border-r border-line bg-surface/70 px-5 py-6 lg:flex lg:flex-col">
         <Link href="/" className="font-display text-2xl tracking-tight text-ink">
-          RAIOS<span className="text-lime">.</span>
+          RAIOS<span className="text-orange">.</span>
         </Link>
 
         <nav className="mt-12 space-y-1" aria-label="Navegação principal">
@@ -27,7 +27,7 @@ export default function MasterLayout({ session, hasClub, active, children }: Mas
               aria-current={active === id ? "page" : undefined}
               className={[
                 "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors",
-                active === id ? "bg-lime text-base" : "text-ink-mute hover:bg-white/[0.05] hover:text-ink",
+                active === id ? "bg-orange text-cream" : "text-ink-mute hover:bg-cream/5 hover:text-cream",
               ].join(" ")}
             >
               <Icon size={18} strokeWidth={active === id ? 2.5 : 2} />
@@ -38,7 +38,7 @@ export default function MasterLayout({ session, hasClub, active, children }: Mas
 
         <Link
           href="/definicoes"
-          className="mt-auto flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-ink-mute hover:bg-white/[0.05] hover:text-ink"
+          className="mt-auto flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-ink-mute hover:bg-cream/5 hover:text-cream"
         >
           <Settings size={18} />
           Definições
@@ -48,7 +48,7 @@ export default function MasterLayout({ session, hasClub, active, children }: Mas
       <div className="min-w-0 pb-24 lg:pb-0">
         <header className="flex items-center justify-between border-b border-line px-5 py-4 lg:px-10">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-mute">Raios</p>
-          <Link href="/perfil" className="text-sm font-semibold text-ink hover:text-lime">
+          <Link href="/perfil" className="text-sm font-semibold text-ink hover:text-orange">
             Conta
           </Link>
         </header>
@@ -64,7 +64,7 @@ export default function MasterLayout({ session, hasClub, active, children }: Mas
               aria-current={active === id ? "page" : undefined}
               className={[
                 "flex min-w-20 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold",
-                active === id ? "text-lime" : "text-ink-mute",
+                active === id ? "text-orange" : "text-ink-mute",
               ].join(" ")}
             >
               <Icon size={19} />
