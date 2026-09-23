@@ -1,21 +1,37 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import HeroBanner from "./HeroBanner";
 import SearchFilters from "./SearchFilters";
 import TeamCard from "./TeamCard";
 import MatchModal from "./MatchModal";
-import { TEAMS, FILTER_PILLS } from "../lib/mock-data";
+import { FILTER_PILLS } from "../lib/mock-data";
 import { Team } from "../lib/types";
 
 export default function ExploreScreen() {
+  const [teams, setTeams] = useState<Team[]>([]);
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] =
     useState<(typeof FILTER_PILLS)[number]>("Todos");
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/teams", { cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error?.message || "Não foi possível carregar os times.");
+        if (active) setTeams(payload.items as Team[]);
+      })
+      .catch((error) => console.error("[explore] teams load failed", error));
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const filteredTeams = useMemo(() => {
-    return TEAMS.filter((team) => {
+    return teams.filter((team) => {
       const matchesQuery =
         query.trim().length === 0 ||
         team.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -29,7 +45,7 @@ export default function ExploreScreen() {
 
       return matchesQuery && matchesFilter;
     });
-  }, [query, activeFilter]);
+  }, [teams, query, activeFilter]);
 
   return (
     <div className="texture-noise min-h-screen pb-32">

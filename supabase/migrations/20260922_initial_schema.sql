@@ -32,6 +32,9 @@ create table if not exists public.teams (
   owner_id uuid not null references public.users (id) on delete cascade,
   name text not null,
   logo_url text,
+  association_type text not null default 'NEIGHBORHOOD'
+    check (association_type in ('SCHOOL', 'NEIGHBORHOOD')),
+  origin text not null default 'Angola',
   location_id uuid references public.locations (id) on delete set null,
   modality text not null,
   home_field text,

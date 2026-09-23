@@ -24,22 +24,61 @@ const EMPTY_DRAFT: NewTeamDraft = {
 
 /** Chama o Route Handler que faz a moderação via Groq no servidor. */
 async function moderateTeamContent(name: string, description: string) {
-  const res = await fetch("/api/moderate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ textToModerate: `NOME: ${name}\nDESCRIÇÃO: ${description}` }),
-  });
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 10000);
+  let res: Response;
+  try {
+    res = await fetch("/api/moderate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ textToModerate: `NOME: ${name}\nDESCRIÇÃO: ${description}` }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    console.error("[teams:create] moderation network failure", error);
+    throw new Error("Não foi possível contactar a moderação. Verifica a ligação e tenta novamente.");
+  } finally {
+    window.clearTimeout(timeout);
+  }
 
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
+  console.info("[teams:create] moderation response", { status: res.status, body: data });
 
   if (!res.ok) {
-    return {
-      flagged: true as const,
-      reason: data.reason ?? "Não foi possível validar o conteúdo.",
-    };
+    throw new Error(data.reason ?? "A moderação está indisponível. Tenta novamente.");
   }
 
   return data as { flagged: boolean; reason: string };
+}
+
+async function createTeam(draft: NewTeamDraft) {
+  const supabase = (await import("../lib/supabase-browser")).getSupabaseBrowserClient();
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) throw new Error("Inicia sessão antes de publicar o clube.");
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch("/api/teams", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(draft),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+    console.info("[teams:create] persistence response", { status: response.status, body: data });
+    if (!response.ok) throw new Error(data.error?.message || "O servidor não conseguiu publicar o clube.");
+    return data;
+  } catch (error) {
+    console.error("[teams:create] persistence request failure", error);
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("O servidor demorou demasiado. Verifica a ligação e tenta novamente.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 async function verifyTurnstile(token: string) {
@@ -55,12 +94,13 @@ async function verifyTurnstile(token: string) {
   }
 }
 
-export default function CreateTeamFlow() {
+export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [draft, setDraft] = useState<NewTeamDraft>(EMPTY_DRAFT);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [submitFailed, setSubmitFailed] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const { showToast } = useToast();
 
@@ -82,6 +122,7 @@ export default function CreateTeamFlow() {
 
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
+    setSubmitFailed(false);
     try {
       if (!turnstileToken) {
         showToast("error", "Confirmação necessária", "Confirma que és uma pessoa para continuar.");
@@ -100,17 +141,16 @@ export default function CreateTeamFlow() {
         return;
       }
 
-      // Aqui entraria a chamada real de criação (ex: POST /api/teams).
-      // Mantemos simulado para o escopo deste frontend.
-      await new Promise((r) => setTimeout(r, 500));
+      await createTeam(draft);
 
       setIsDone(true);
       showToast("success", "Time criado!", `${draft.name} já está visível nos Raios.`);
-    } catch {
+    } catch (error) {
+      setSubmitFailed(true);
       showToast(
         "error",
-        "Algo correu mal",
-        "Não conseguimos criar o time agora. Tenta novamente."
+        "Publicação falhou",
+        error instanceof Error ? error.message : "Não conseguimos publicar o clube. Tenta novamente."
       );
     } finally {
       setIsSubmitting(false);
@@ -135,6 +175,14 @@ export default function CreateTeamFlow() {
         >
           Criar outro time
         </button>
+        {onCreated && (
+          <button
+            onClick={onCreated}
+            className="font-body mt-3 rounded-pill border border-cream/20 bg-navy-soft px-6 py-3 text-sm font-semibold text-cream"
+          >
+            Ver times publicados
+          </button>
+        )}
       </div>
     );
   }
@@ -204,7 +252,7 @@ export default function CreateTeamFlow() {
                 A validar conteúdo…
               </>
             ) : (
-              "Criar time"
+              submitFailed ? "Tentar publicar novamente" : "Criar time"
             )}
           </button>
         )}

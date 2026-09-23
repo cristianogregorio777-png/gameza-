@@ -49,3 +49,24 @@ export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
+
+export async function uploadProfileAvatar(file: File, userId: string) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Escolhe uma imagem válida para o avatar.");
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    throw new Error("O avatar deve ter no máximo 2 MB.");
+  }
+
+  const supabase = getSupabaseBrowserClient();
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("avatars").upload(path, file, {
+    cacheControl: "3600",
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) throw new Error("Não foi possível carregar o avatar. Tenta novamente.");
+
+  return supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+}

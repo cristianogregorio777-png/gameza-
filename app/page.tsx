@@ -80,7 +80,7 @@ export default function Home() {
   return (
     <>
       {tab === "explore" && <ExploreScreen />}
-      {tab === "create" && <CreateTeamFlow />}
+      {tab === "create" && <CreateTeamFlow onCreated={() => setTab("explore")} />}
       {tab === "profile" && !isAuthenticated && (
         <AuthPanel
           onBack={() => setTab("explore")}
