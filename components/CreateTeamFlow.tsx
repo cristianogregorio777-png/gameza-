@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Loader2 } from "lucide-react";
 import { AssociationType, FieldType, NewTeamDraft } from "../lib/types";
 import { useToast } from "./Toast";
@@ -45,7 +45,13 @@ async function createTeam(draft: NewTeamDraft, turnstileToken: string) {
     });
     const data = await response.json().catch(() => ({}));
     console.info("[teams:create] persistence response", { status: response.status, body: data });
-    if (!response.ok) throw new Error(data.error?.message || "O servidor não conseguiu publicar o clube.");
+    if (!response.ok) {
+      const error = new Error(data.error?.message || "O servidor não conseguiu publicar o clube.") as Error & {
+        code?: string;
+      };
+      error.code = data.error?.code;
+      throw error;
+    }
     return data;
   } catch (error) {
     console.error("[teams:create] persistence request failure", error);
@@ -66,7 +72,15 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
   const [isDone, setIsDone] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileKey, setTurnstileKey] = useState(0);
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const { showToast } = useToast();
+
+  const resetTurnstile = () => {
+    setTurnstileToken("");
+    turnstileRef.current?.reset();
+    setTurnstileKey((key) => key + 1);
+  };
 
   const step = STEPS[stepIndex];
 
@@ -99,6 +113,10 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
       showToast("success", "Time criado!", `${draft.name} já está visível nos Raios.`);
     } catch (error) {
       setSubmitFailed(true);
+      const errorCode = error instanceof Error && "code" in error ? String(error.code) : "";
+      if (errorCode === "TURNSTILE_FAILED" || errorCode === "TURNSTILE_UNAVAILABLE") {
+        resetTurnstile();
+      }
       showToast(
         "error",
         "Publicação falhou",
@@ -164,7 +182,8 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
             {step === "Revisão" && (
               <StepRevisao
                 draft={draft}
-                turnstileToken={turnstileToken}
+                turnstileRef={turnstileRef}
+                turnstileKey={turnstileKey}
                 onTurnstileToken={setTurnstileToken}
               />
             )}
@@ -195,7 +214,7 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
         ) : (
           <button
             onClick={handleFinalSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !turnstileToken}
             className="font-body flex flex-1 items-center justify-center gap-2 rounded-pill bg-orange py-3.5 text-sm font-bold text-cream disabled:opacity-60"
           >
             {isSubmitting ? (
@@ -416,11 +435,13 @@ function StepContacto({
 
 function StepRevisao({
   draft,
-  turnstileToken,
+  turnstileRef,
+  turnstileKey,
   onTurnstileToken,
 }: {
   draft: NewTeamDraft;
-  turnstileToken: string;
+  turnstileRef: React.RefObject<TurnstileInstance | null>;
+  turnstileKey: number;
   onTurnstileToken: (token: string) => void;
 }) {
   const rows: [string, string][] = [
@@ -452,12 +473,13 @@ function StepRevisao({
       )}
       <div className="mt-4 flex justify-center">
         <Turnstile
-          key={turnstileToken ? "verified" : "pending"}
+          ref={turnstileRef}
+          key={turnstileKey}
           siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
           onSuccess={onTurnstileToken}
           onExpire={() => onTurnstileToken("")}
           onError={() => onTurnstileToken("")}
-          options={{ theme: "dark", size: "flexible" }}
+          options={{ theme: "dark", size: "flexible", "refresh-expired": "auto" }}
         />
       </div>
     </div>

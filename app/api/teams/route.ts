@@ -65,9 +65,17 @@ function isOwnedPublicAsset(value: string, bucket: string, userId: string) {
   }
 }
 
-async function verifyTurnstile(token: string, request: NextRequest) {
+type TurnstileVerifyResult =
+  | { ok: true }
+  | { ok: false; reason: "missing_secret" | "missing_token" | "verification_failed"; errorCodes?: string[] };
+
+async function verifyTurnstile(token: string, request: NextRequest, requestId: string): Promise<TurnstileVerifyResult> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret || !token) return false;
+  if (!secret) {
+    console.error("[teams:create] turnstile secret missing", { requestId });
+    return { ok: false, reason: "missing_secret" };
+  }
+  if (!token) return { ok: false, reason: "missing_token" };
 
   const formData = new URLSearchParams({ secret, response: token });
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -80,10 +88,25 @@ async function verifyTurnstile(token: string, request: NextRequest) {
       body: formData.toString(),
       signal: AbortSignal.timeout(10000),
     });
-    const result = (await response.json()) as { success?: boolean };
-    return response.ok && result.success === true;
-  } catch {
-    return false;
+    const result = (await response.json()) as {
+      success?: boolean;
+      "error-codes"?: string[];
+      hostname?: string;
+    };
+
+    if (response.ok && result.success === true) {
+      return { ok: true };
+    }
+
+    console.warn("[teams:create] turnstile verification failed", {
+      requestId,
+      errorCodes: result["error-codes"],
+      hostname: result.hostname,
+    });
+    return { ok: false, reason: "verification_failed", errorCodes: result["error-codes"] };
+  } catch (error) {
+    console.error("[teams:create] turnstile request failed", { requestId, error });
+    return { ok: false, reason: "verification_failed" };
   }
 }
 
@@ -163,8 +186,20 @@ export async function POST(request: NextRequest) {
     if (authError || !authData.user) return responseError(401, "INVALID_SESSION", "A sessão expirou. Entra novamente.", requestId);
 
     const turnstileToken = text(input.turnstileToken);
-    if (!(await verifyTurnstile(turnstileToken, request))) {
-      return responseError(403, "TURNSTILE_FAILED", "Confirma a proteção anti-spam e tenta novamente.", requestId);
+    const turnstile = await verifyTurnstile(turnstileToken, request, requestId);
+    if (!turnstile.ok) {
+      if (turnstile.reason === "missing_secret") {
+        return responseError(503, "TURNSTILE_UNAVAILABLE", "A proteção anti-spam não está configurada no servidor.", requestId);
+      }
+      const isDuplicate = turnstile.errorCodes?.includes("timeout-or-duplicate");
+      return responseError(
+        403,
+        "TURNSTILE_FAILED",
+        isDuplicate
+          ? "A confirmação expirou ou já foi usada. Confirma novamente a proteção anti-spam."
+          : "Confirma a proteção anti-spam e tenta novamente.",
+        requestId,
+      );
     }
 
     const moderation = await moderateText(`NOME: ${name}\nDESCRIÇÃO: ${description}`);
