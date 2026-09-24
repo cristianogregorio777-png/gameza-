@@ -6,6 +6,9 @@ import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Loader2 } from "lucide-rea
 import { AssociationType, FieldType, NewTeamDraft } from "../lib/types";
 import { useToast } from "./Toast";
 import { uploadTeamLogo } from "../lib/supabase-browser";
+import { Turnstile } from "@marsidev/react-turnstile";
+
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 const STEPS = ["Identidade", "Associação", "Contacto", "Revisão"] as const;
 type StepId = (typeof STEPS)[number];
@@ -22,7 +25,7 @@ const EMPTY_DRAFT: NewTeamDraft = {
   description: "",
 };
 
-async function createTeam(draft: NewTeamDraft) {
+async function createTeam(draft: NewTeamDraft, turnstileToken: string) {
   const supabase = (await import("../lib/supabase-browser")).getSupabaseBrowserClient();
   const { data: sessionData } = await supabase.auth.getSession();
   const session = sessionData.session;
@@ -39,7 +42,7 @@ async function createTeam(draft: NewTeamDraft) {
     const response = await fetch("/api/teams", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-      body: JSON.stringify({ ...draft, logoUrl }),
+      body: JSON.stringify({ ...draft, logoUrl, turnstileToken }),
       credentials: "same-origin",
       signal: controller.signal,
     });
@@ -71,6 +74,8 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [widgetKey, setWidgetKey] = useState(0);
   const { showToast } = useToast();
 
   const step = STEPS[stepIndex];
@@ -93,12 +98,14 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
     setIsSubmitting(true);
     setSubmitFailed(false);
     try {
-      await createTeam(draft);
+      await createTeam(draft, turnstileToken);
 
       setIsDone(true);
       showToast("success", "Time criado!", `${draft.name} já está visível nos Raios.`);
     } catch (error) {
       setSubmitFailed(true);
+      setWidgetKey(k => k + 1);
+      setTurnstileToken("");
       showToast(
         "error",
         "Publicação falhou",
@@ -161,7 +168,29 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
             {step === "Identidade" && <StepIdentidade draft={draft} update={update} />}
             {step === "Associação" && <StepAssociacao draft={draft} update={update} />}
             {step === "Contacto" && <StepContacto draft={draft} update={update} />}
-            {step === "Revisão" && <StepRevisao draft={draft} />}
+            {step === "Revisão" && (
+              <div className="space-y-6">
+                <StepRevisao draft={draft} />
+                {SITE_KEY && (
+                  <div className="flex flex-col items-center justify-center pt-2">
+                    <Turnstile
+                      key={widgetKey}
+                      siteKey={SITE_KEY}
+                      onSuccess={setTurnstileToken}
+                      onError={() => {
+                        setTurnstileToken("");
+                        setWidgetKey(k => k + 1);
+                      }}
+                      onExpire={() => {
+                        setTurnstileToken("");
+                        setWidgetKey(k => k + 1);
+                      }}
+                      options={{ theme: "dark", action: "create_team" }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -189,7 +218,7 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
         ) : (
           <button
             onClick={handleFinalSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || (SITE_KEY ? !turnstileToken : false)}
             className="font-body flex flex-1 items-center justify-center gap-2 rounded-pill bg-orange py-3.5 text-sm font-bold text-cream disabled:opacity-60"
           >
             {isSubmitting ? (

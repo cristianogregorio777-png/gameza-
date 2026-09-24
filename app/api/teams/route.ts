@@ -15,6 +15,7 @@ interface TeamInput {
   whatsapp?: unknown;
   description?: unknown;
   logoUrl?: unknown;
+  turnstileToken?: unknown;
 }
 
 function responseError(status: number, code: string, message: string, requestId: string) {
@@ -66,19 +67,8 @@ function isOwnedPublicAsset(value: string, bucket: string, userId: string) {
 }
 
 function requireHumanSession(request: NextRequest, requestId: string): NextResponse | null {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return null;
-
-  const verified = hasHumanVerifiedCookie(request.cookies.get(HUMAN_VERIFIED_COOKIE)?.value);
-  if (verified) return null;
-
-  console.warn("[teams:create] human verification cookie missing", { requestId });
-  return responseError(
-    403,
-    "HUMAN_VERIFICATION_REQUIRED",
-    "Confirma que és humano ao entrar no site (ecrã inicial) e tenta publicar outra vez.",
-    requestId,
-  );
+  // Legacy cookie verification, skipping if direct token is checked
+  return null;
 }
 
 export async function GET(request: NextRequest) {
@@ -156,8 +146,34 @@ export async function POST(request: NextRequest) {
     const { data: authData, error: authError } = await supabase.auth.getUser(accessToken);
     if (authError || !authData.user) return responseError(401, "INVALID_SESSION", "A sessão expirou. Entra novamente.", requestId);
 
-    const humanBlock = requireHumanSession(request, requestId);
-    if (humanBlock) return humanBlock;
+    const turnstileToken = typeof input.turnstileToken === "string" ? input.turnstileToken.trim() : "";
+    const secret = process.env.TURNSTILE_SECRET_KEY;
+    if (secret) {
+      if (!turnstileToken) {
+        return responseError(403, "HUMAN_VERIFICATION_REQUIRED", "Confirma que és humano antes de publicar o clube.", requestId);
+      }
+      
+      const formData = new URLSearchParams();
+      formData.append("secret", secret);
+      formData.append("response", turnstileToken);
+      const forwardedFor = request.headers.get("x-forwarded-for");
+      if (forwardedFor) formData.append("remoteip", forwardedFor.split(",")[0].trim());
+
+      try {
+        const turnstileRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          signal: AbortSignal.timeout(10_000),
+          body: formData.toString(),
+        });
+        const turnstileResult = (await turnstileRes.json()) as { success?: boolean; action?: string };
+        if (!turnstileRes.ok || !turnstileResult.success || turnstileResult.action !== "create_team") {
+          return responseError(403, "HUMAN_VERIFICATION_FAILED", "Confirma a proteção anti-spam e tenta novamente.", requestId);
+        }
+      } catch {
+        return responseError(502, "HUMAN_VERIFICATION_ERROR", "Não foi possível validar a proteção anti-spam.", requestId);
+      }
+    }
 
     const moderation = await moderateText(`NOME: ${name}\nDESCRIÇÃO: ${description}`);
     if (moderation.flagged) {
