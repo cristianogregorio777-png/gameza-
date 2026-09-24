@@ -72,6 +72,7 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
   const [direction, setDirection] = useState(1);
   const [draft, setDraft] = useState<NewTeamDraft>(EMPTY_DRAFT);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModerating, setIsModerating] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
@@ -83,8 +84,32 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
   const update = <K extends keyof NewTeamDraft>(key: K, value: NewTeamDraft[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
 
-  const goNext = () => {
+  const goNext = async () => {
     if (!canAdvance(step, draft)) return;
+
+    if (step === "Contacto") {
+      setIsModerating(true);
+      try {
+        const response = await fetch("/api/moderate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ textToModerate: `NOME: ${draft.name}\nDESCRIÇÃO: ${draft.description}` }),
+        });
+        
+        if (response.ok || response.status === 422 || response.status === 429) {
+          const data = await response.json();
+          if (data.flagged) {
+            showToast("error", "Conteúdo não permitido", data.reason || "Revê o nome ou a descrição do teu time.");
+            setIsModerating(false);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Erro na moderação", error);
+      }
+      setIsModerating(false);
+    }
+
     setDirection(1);
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
   };
@@ -209,11 +234,11 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
         {step !== "Revisão" ? (
           <button
             onClick={goNext}
-            disabled={!canAdvance(step, draft)}
+            disabled={!canAdvance(step, draft) || isModerating}
             className="font-body flex flex-1 items-center justify-center gap-2 rounded-pill bg-orange py-3.5 text-sm font-bold text-cream disabled:opacity-30"
           >
-            Continuar
-            <ArrowRight size={16} />
+            {isModerating ? <Loader2 size={16} className="animate-spin" /> : "Continuar"}
+            {!isModerating && <ArrowRight size={16} />}
           </button>
         ) : (
           <button
