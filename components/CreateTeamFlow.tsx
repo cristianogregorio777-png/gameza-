@@ -73,7 +73,7 @@ export default function CreateTeamFlow({ onCreated }: { onCreated?: () => void }
   const [submitFailed, setSubmitFailed] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileKey, setTurnstileKey] = useState(0);
-  const turnstileRef = useRef<TurnstileInstance>(null);
+  const turnstileRef = useRef<TurnstileInstance | undefined>(undefined);
   const { showToast } = useToast();
 
   const resetTurnstile = () => {
@@ -440,7 +440,7 @@ function StepRevisao({
   onTurnstileToken,
 }: {
   draft: NewTeamDraft;
-  turnstileRef: React.RefObject<TurnstileInstance | null>;
+  turnstileRef: React.RefObject<TurnstileInstance | undefined>;
   turnstileKey: number;
   onTurnstileToken: (token: string) => void;
 }) {
@@ -479,7 +479,7 @@ function StepRevisao({
           onSuccess={onTurnstileToken}
           onExpire={() => onTurnstileToken("")}
           onError={() => onTurnstileToken("")}
-          options={{ theme: "dark", size: "flexible", "refresh-expired": "auto" }}
+          options={{ theme: "dark", size: "flexible", refreshExpired: "auto" }}
         />
       </div>
     </div>
