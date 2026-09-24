@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Loader2, ShieldCheck } from "lucide-react";
 
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+const SITE_KEY = ""; // process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 type GateState = "loading" | "verified" | "challenge" | "error";
 

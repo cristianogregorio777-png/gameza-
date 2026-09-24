@@ -8,7 +8,7 @@ import { useToast } from "./Toast";
 import { uploadTeamLogo } from "../lib/supabase-browser";
 import { Turnstile } from "@marsidev/react-turnstile";
 
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+const SITE_KEY = ""; // process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 const STEPS = ["Identidade", "Associação", "Contacto", "Revisão"] as const;
 type StepId = (typeof STEPS)[number];

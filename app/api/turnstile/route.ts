@@ -8,7 +8,7 @@ import {
 export const runtime = "edge";
 
 export async function GET(req: NextRequest) {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  const secret = null; // process.env.TURNSTILE_SECRET_KEY;
   if (!secret) {
     return NextResponse.json({ verified: true, disabled: true });
   }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   const token = typeof body.token === "string" ? body.token.trim() : "";
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  const secret = null; // process.env.TURNSTILE_SECRET_KEY;
 
   if (!secret) {
     const response = NextResponse.json({ success: true, disabled: true });

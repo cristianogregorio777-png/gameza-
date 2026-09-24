@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     if (authError || !authData.user) return responseError(401, "INVALID_SESSION", "A sessão expirou. Entra novamente.", requestId);
 
     const turnstileToken = typeof input.turnstileToken === "string" ? input.turnstileToken.trim() : "";
-    const secret = process.env.TURNSTILE_SECRET_KEY;
+    const secret = null; // process.env.TURNSTILE_SECRET_KEY;
     if (secret) {
       if (!turnstileToken) {
         return responseError(403, "HUMAN_VERIFICATION_REQUIRED", "Confirma que és humano antes de publicar o clube.", requestId);
