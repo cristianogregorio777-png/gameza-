@@ -25,35 +25,39 @@ Responda ESTRITAMENTE em JSON, sem nenhum texto antes ou depois, neste formato:
 export async function moderateText(textToModerate: string): Promise<ModerationResult> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error("GROQ_API_KEY não configurada no ambiente do servidor.");
+    console.warn("[groq] GROQ_API_KEY ausente — moderação ignorada.");
+    return { flagged: false, reason: "" };
   }
 
-  const groq = new Groq({ apiKey });
-
-  const completion = await groq.chat.completions.create({
-    model: GROQ_MODEL,
-    temperature: 0,
-    max_tokens: 200,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: textToModerate },
-    ],
-  });
-
-  const raw = completion.choices[0]?.message?.content ?? "";
-
   try {
-    const parsed = JSON.parse(raw);
-    if (typeof parsed.flagged !== "boolean") throw new Error("Campo flagged inválido");
-    return {
-      flagged: parsed.flagged,
-      reason: typeof parsed.reason === "string" ? parsed.reason : "",
-    };
-  } catch {
-    return {
-      flagged: true,
-      reason: "Não foi possível validar o conteúdo automaticamente. Tenta novamente.",
-    };
+    const groq = new Groq({ apiKey });
+
+    const completion = await groq.chat.completions.create({
+      model: GROQ_MODEL,
+      temperature: 0,
+      max_tokens: 200,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: textToModerate },
+      ],
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "";
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.flagged !== "boolean") throw new Error("Campo flagged inválido");
+      return {
+        flagged: parsed.flagged,
+        reason: typeof parsed.reason === "string" ? parsed.reason : "",
+      };
+    } catch (parseError) {
+      console.warn("[groq] resposta inválida — moderação ignorada.", parseError);
+      return { flagged: false, reason: "" };
+    }
+  } catch (error) {
+    console.error("[groq] falha na API — moderação ignorada.", error);
+    return { flagged: false, reason: "" };
   }
 }

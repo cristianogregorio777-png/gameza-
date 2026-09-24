@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { moderateText } from "../../../lib/groq";
+import { HUMAN_VERIFIED_COOKIE, hasHumanVerifiedCookie } from "../../../lib/turnstile-session";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,6 @@ interface TeamInput {
   whatsapp?: unknown;
   description?: unknown;
   logoUrl?: unknown;
-  turnstileToken?: unknown;
 }
 
 function responseError(status: number, code: string, message: string, requestId: string) {
@@ -65,49 +65,20 @@ function isOwnedPublicAsset(value: string, bucket: string, userId: string) {
   }
 }
 
-type TurnstileVerifyResult =
-  | { ok: true }
-  | { ok: false; reason: "missing_secret" | "missing_token" | "verification_failed"; errorCodes?: string[] };
-
-async function verifyTurnstile(token: string, request: NextRequest, requestId: string): Promise<TurnstileVerifyResult> {
+function requireHumanSession(request: NextRequest, requestId: string): NextResponse | null {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) {
-    console.error("[teams:create] turnstile secret missing", { requestId });
-    return { ok: false, reason: "missing_secret" };
-  }
-  if (!token) return { ok: false, reason: "missing_token" };
+  if (!secret) return null;
 
-  const formData = new URLSearchParams({ secret, response: token });
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) formData.set("remoteip", forwardedFor.split(",")[0].trim());
+  const verified = hasHumanVerifiedCookie(request.cookies.get(HUMAN_VERIFIED_COOKIE)?.value);
+  if (verified) return null;
 
-  try {
-    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formData.toString(),
-      signal: AbortSignal.timeout(10000),
-    });
-    const result = (await response.json()) as {
-      success?: boolean;
-      "error-codes"?: string[];
-      hostname?: string;
-    };
-
-    if (response.ok && result.success === true) {
-      return { ok: true };
-    }
-
-    console.warn("[teams:create] turnstile verification failed", {
-      requestId,
-      errorCodes: result["error-codes"],
-      hostname: result.hostname,
-    });
-    return { ok: false, reason: "verification_failed", errorCodes: result["error-codes"] };
-  } catch (error) {
-    console.error("[teams:create] turnstile request failed", { requestId, error });
-    return { ok: false, reason: "verification_failed" };
-  }
+  console.warn("[teams:create] human verification cookie missing", { requestId });
+  return responseError(
+    403,
+    "HUMAN_VERIFICATION_REQUIRED",
+    "Confirma que és humano ao entrar no site (ecrã inicial) e tenta publicar outra vez.",
+    requestId,
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -185,22 +156,8 @@ export async function POST(request: NextRequest) {
     const { data: authData, error: authError } = await supabase.auth.getUser(accessToken);
     if (authError || !authData.user) return responseError(401, "INVALID_SESSION", "A sessão expirou. Entra novamente.", requestId);
 
-    const turnstileToken = text(input.turnstileToken);
-    const turnstile = await verifyTurnstile(turnstileToken, request, requestId);
-    if (!turnstile.ok) {
-      if (turnstile.reason === "missing_secret") {
-        return responseError(503, "TURNSTILE_UNAVAILABLE", "A proteção anti-spam não está configurada no servidor.", requestId);
-      }
-      const isDuplicate = turnstile.errorCodes?.includes("timeout-or-duplicate");
-      return responseError(
-        403,
-        "TURNSTILE_FAILED",
-        isDuplicate
-          ? "A confirmação expirou ou já foi usada. Confirma novamente a proteção anti-spam."
-          : "Confirma a proteção anti-spam e tenta novamente.",
-        requestId,
-      );
-    }
+    const humanBlock = requireHumanSession(request, requestId);
+    if (humanBlock) return humanBlock;
 
     const moderation = await moderateText(`NOME: ${name}\nDESCRIÇÃO: ${description}`);
     if (moderation.flagged) {

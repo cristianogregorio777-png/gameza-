@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Roboto_Slab } from "next/font/google";
 import { ToastProvider } from "../components/Toast";
 import BrandHeader from "../components/BrandHeader";
+import HumanVerificationGate from "../components/HumanVerificationGate";
 import "./globals.css";
 
 const display = Roboto_Slab({
@@ -25,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-AO" className={`${display.variable} ${body.variable}`}>
       <body className="bg-base font-body text-ink">
         <ToastProvider>
-          <main className="mx-auto min-h-screen max-w-app lg:max-w-[1120px] lg:px-8">
-            <BrandHeader />
-            {children}
-          </main>
+          <HumanVerificationGate>
+            <main className="mx-auto min-h-screen max-w-app lg:max-w-[1120px] lg:px-8">
+              <BrandHeader />
+              {children}
+            </main>
+          </HumanVerificationGate>
         </ToastProvider>
       </body>
     </html>

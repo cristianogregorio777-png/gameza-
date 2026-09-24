@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  HUMAN_VERIFIED_COOKIE,
+  HUMAN_VERIFIED_MAX_AGE_SEC,
+  hasHumanVerifiedCookie,
+} from "../../../lib/turnstile-session";
 
 export const runtime = "edge";
+
+export async function GET(req: NextRequest) {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) {
+    return NextResponse.json({ verified: true, disabled: true });
+  }
+
+  const verified = hasHumanVerifiedCookie(req.cookies.get(HUMAN_VERIFIED_COOKIE)?.value);
+  return NextResponse.json({ verified });
+}
 
 export async function POST(req: NextRequest) {
   let body: { token?: unknown };
@@ -17,10 +32,22 @@ export async function POST(req: NextRequest) {
   const token = typeof body.token === "string" ? body.token.trim() : "";
   const secret = process.env.TURNSTILE_SECRET_KEY;
 
-  if (!token || !secret) {
+  if (!secret) {
+    const response = NextResponse.json({ success: true, disabled: true });
+    response.cookies.set(HUMAN_VERIFIED_COOKIE, "1", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: HUMAN_VERIFIED_MAX_AGE_SEC,
+      path: "/",
+    });
+    return response;
+  }
+
+  if (!token) {
     return NextResponse.json(
       { success: false, reason: "Proteção anti-spam indisponível." },
-      { status: 503 }
+      { status: 400 }
     );
   }
 
@@ -51,7 +78,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    const json = NextResponse.json({ success: true });
+    json.cookies.set(HUMAN_VERIFIED_COOKIE, "1", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: HUMAN_VERIFIED_MAX_AGE_SEC,
+      path: "/",
+    });
+    return json;
   } catch {
     return NextResponse.json(
       { success: false, reason: "Não foi possível validar a proteção anti-spam." },
